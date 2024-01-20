@@ -3,7 +3,7 @@
  interface VandorDoc extends Document{
     name: string;
     ownername: string;
-    foodType: [string];
+    foodTypes: [string];
     password: string;
     pincode: string;
     address: string;
@@ -19,7 +19,7 @@
  const VandorSchema = new Schema({
     name: {type:String , required: true},
     ownername: {type:String , required: true},
-    foodType: {type: [String ]},
+    foodTypes: {type: [String ]},
     password: {type :String , required :true},
     pincode: {type: String , required: true},
     address: {type: String ,  required :true},
@@ -41,6 +41,7 @@
             delete ret.__v;
             delete ret.createdAt;
             delete ret.updatedAt;
+            delete ret.coverImages;
         }
     },
     timestamps:true
