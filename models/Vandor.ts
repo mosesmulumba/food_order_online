@@ -13,7 +13,7 @@
     phone: string;
     serviceAvailable: string;
     coverImages: [string];
-    // foods:any
+    foods:any
  };
 
  const VandorSchema = new Schema({
@@ -29,10 +29,10 @@
     phone: {type:String },
     serviceAvailable: {type:Boolean},
     coverImages: {type :  [String]},
-    // foods: [{
-    //     type: mongoose.SchemaTypes.ObjectId,
-    //     ref: 'food'
-    // }]
+    foods: [{
+        type: mongoose.SchemaTypes.ObjectId,
+        ref: 'food'
+    }]
  },{
     toJSON:{
         transform(doc, ret){

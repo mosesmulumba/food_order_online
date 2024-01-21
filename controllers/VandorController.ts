@@ -1,7 +1,8 @@
 import { Request , Response , NextFunction } from "express";
 import { FindVandor } from "./AdminController";
-import { VanderEditInputs, VandorLoginInputs } from "../dto";
+import { CreateFoodInput, VanderEditInputs, VandorLoginInputs } from "../dto";
 import { GenerateSignature, ValidatePassword } from "../utility";
+import { Food } from "../models";
 
 export const VandorLogin = async(req:Request , res:Response , next:NextFunction)=>{
     const {email , password} = <VandorLoginInputs>req.body;
@@ -61,7 +62,48 @@ export const UpdateVandorProfile =  async(req: Request, res: Response, next: Nex
     return res.json({"message": "Vandor information is not found!"})
 }
 
-export const UpdateVandorService =  async(req: Request, res: Response, next: NextFunction)=>{
+export const AddFood =  async(req: Request, res: Response, next: NextFunction)=>{
 
-    
+    const user = req.user;
+
+    const { name, description ,category ,foodType ,readytime , price} = <CreateFoodInput>req.body;
+
+    const vandor = await FindVandor(user?._id);
+
+    if(vandor !== null){
+        const files = req.files as [Express.Multer.File];
+
+        const images = files.map((file: Express.Multer.File) => file.filename);
+
+        const createdFood = await Food.create({
+            vandorId: vandor._id,
+            name: name,
+            description:  description,
+            category: category,
+            foodType: foodType,
+            readytime: readytime,
+            price:0,
+            images: images
+        })
+
+        vandor.foods.push(createdFood);
+        const result = await vandor.save();
+
+        return res.json(result);
+    }
+    return res.json({message: "Something went wrong!"})
+}
+
+export const GetFoods =  async(req: Request, res: Response, next: NextFunction)=>{
+
+ const user = req.user;
+ 
+ if(user){
+    const foods = await Food.find({vandorId: user._id});
+    if(foods !== null){
+        console.log(foods);
+        return res.json(foods);
+    }
+ }
+ return res.json({message: "The foods information was not found!"});
 }
