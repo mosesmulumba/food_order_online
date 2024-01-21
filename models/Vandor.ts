@@ -41,7 +41,7 @@
             delete ret.__v;
             delete ret.createdAt;
             delete ret.updatedAt;
-            delete ret.coverImages;
+            // delete ret.coverImages;
         }
     },
     timestamps:true

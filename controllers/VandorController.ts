@@ -107,3 +107,23 @@ export const GetFoods =  async(req: Request, res: Response, next: NextFunction)=
  }
  return res.json({message: "The foods information was not found!"});
 }
+
+export const UpdateCoverImages =  async(req: Request, res: Response, next: NextFunction)=>{
+
+    const user = req.user;
+
+    const vandor = await FindVandor(user?._id);
+
+    if(vandor !== null){
+        const files = req.files as [Express.Multer.File];
+
+        const images = files.map((file: Express.Multer.File) => file.filename);
+
+
+        vandor.coverImages.push(...images);
+        const result = await vandor.save();
+
+        return res.json(result);
+    }
+    return res.json({message: "Something went wrong!"})
+}
