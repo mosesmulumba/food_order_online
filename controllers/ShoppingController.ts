@@ -16,6 +16,7 @@ export const GetFoodsAvailability = async(req:Request , res: Response, next: Nex
 
 }
 
+
 export const GetTopRestaurants = async(req:Request , res: Response, next: NextFunction)=>{
  
     
@@ -30,6 +31,7 @@ export const GetTopRestaurants = async(req:Request , res: Response, next: NextFu
     }
     return res.status(400).json({message:"no data found"});
 }
+
 
 export const GetFoodsIn30Min= async(req:Request , res: Response, next: NextFunction)=>{
     
@@ -49,6 +51,7 @@ export const GetFoodsIn30Min= async(req:Request , res: Response, next: NextFunct
     }
     return res.status(400).json({message:"no data found"});
 }
+
 
 export const SearchFoods = async(req:Request , res: Response, next: NextFunction)=>{
     const pincode = req.params.pincode;

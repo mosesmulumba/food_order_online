@@ -1,6 +1,5 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { VandorPayLoad } from '../dto';
 import { APP_SECRET } from '../config';
 import { AuthPayload } from '../dto/Auth.dto';
 import { Request } from 'express';
@@ -17,7 +16,7 @@ export const ValidatePassword = async(enteredPassword: string, savedPassword: st
     return await GeneratePassword(enteredPassword , salt) === savedPassword;
 }
 
-export const GenerateSignature = (payload: VandorPayLoad)=>{
+export const GenerateSignature = (payload: AuthPayload)=>{
     return jwt.sign(payload , APP_SECRET,{expiresIn: "1d"}) ;
   
 }
