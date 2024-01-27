@@ -12,6 +12,7 @@ interface CustomerDoc extends Document{
     lat: number,
     address: string,
     verified: boolean
+    salt: string;
 };
 
 const CustomerSchema = new Schema({
@@ -25,7 +26,8 @@ const CustomerSchema = new Schema({
     lng:{type: Number},
     lat: {type: Number},
     address: {type: String},
-    verified: {type: Boolean}
+    verified: {type: Boolean},
+    salt: {type: String}
 },{
    toJSON:{
        transform(doc, ret){

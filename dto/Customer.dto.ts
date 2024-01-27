@@ -13,6 +13,27 @@ export class CreateCustomerInput{
 
 }
 
+export class UserLoginIputs{
+    @IsEmail()
+    email: string;
+
+    @Length(6 , 12)
+    password: string;
+
+}
+
+export class EditCustomerProfileInputs{
+    @Length(6 , 12)
+    firstName: string;
+
+    @Length(6 , 12)
+    lastName: string;
+
+    @Length(6 , 12)
+    address: string;
+
+}
+
 export interface CusomerPayload{
     _id: string;
     email: string;

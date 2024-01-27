@@ -1,16 +1,17 @@
 import { plainToClass } from "class-transformer";
 import express, { Request, Response, NextFunction } from "express";
-import { CreateCustomerInput } from "../dto/Customer.dto";
-import { validate } from "class-validator";
+import { CreateCustomerInput, EditCustomerProfileInputs, UserLoginIputs } from "../dto/Customer.dto";
+import { ValidationError, validate } from "class-validator";
 import {
   GenerateOtp,
   GeneratePassword,
   GenerateSalt,
   GenerateSignature,
+  ValidatePassword,
   onRequestOtp,
 } from "../utility";
 import { Customer } from "../models";
-import { sign } from "crypto";
+import { sign, verify } from "crypto";
 
 export const CustomerSignup = async (
   req: Request,
@@ -58,7 +59,7 @@ export const CustomerSignup = async (
 
   if (result) {
     // send the OTP to customer
-    await onRequestOtp(otp, phone);
+    // await onRequestOtp(otp, phone);
 
     // generate the signature
     const signature = GenerateSignature({
@@ -68,22 +69,62 @@ export const CustomerSignup = async (
     });
 
     // send the result to customer
-    return res
-      .status(200)
-      .json({
-        signature: signature,
-        verified: result.verified,
-        email: result.email,
-      });
+    return res.status(200).json({
+      signature: signature,
+      verified: result.verified,
+      email: result.email,
+    });
   }
 };
 
+// the customer should be able to login using this controller
 export const CustomerLogin = async (
   req: Request,
   res: Response,
   next: NextFunction
-) => {};
+) => {
+  const loginInputs = plainToClass(UserLoginIputs, req.body);
 
+  const loginErrors = await validate(loginInputs, {
+    validationError: { target: false },
+  });
+
+  if (loginErrors.length > 0) {
+    return res.status(400).json({ loginErrors });
+  }
+
+  const { email, password } = loginInputs;
+
+  const customer = await Customer.findOne({ email: email });
+  if (customer) {
+    const validation = await ValidatePassword(
+      password,
+      customer.password,
+      customer.salt
+    );
+
+    if (validation) {
+      // generate the signature
+      const signature = GenerateSignature({
+        _id: customer._id,
+        verified: customer.verified,
+        email: customer.email,
+      });
+
+      // send the result to the client
+      return res.status(201).json({
+        signature: signature,
+        verified: customer.verified,
+        email: customer.email,
+      });
+    }
+  }
+  return res.status(404).json({ message: "Error in Login" });
+};
+
+
+// the customer can verify whether they are able to login and also receive the otp 
+// which is to be passed as the request to verify 
 export const CustomerVerify = async (
   req: Request,
   res: Response,
@@ -92,13 +133,11 @@ export const CustomerVerify = async (
   const { otp } = req.body;
   const customer = req.user;
   if (customer) {
-
     const profile = await Customer.findById(customer._id);
     console.log(profile);
 
     if (profile) {
-      if (profile.otp === parseInt(otp) && profile.otp_expiry >= new Date()){
-
+      if (profile.otp === parseInt(otp) && profile.otp_expiry >= new Date()) {
         profile.verified = true;
 
         const updatedCustomerResponse = await profile.save();
@@ -111,37 +150,89 @@ export const CustomerVerify = async (
         });
 
         // send the result to customer
-        return res
-          .status(201)
-          .json({
-            signature: signature,
-            verified: updatedCustomerResponse.verified,
-            email: updatedCustomerResponse.email
-          });
+        return res.status(201).json({
+          signature: signature,
+          verified: updatedCustomerResponse.verified,
+          email: updatedCustomerResponse.email,
+        });
       }
     }
   }
-  return res.status(400).json({message: "Error in otp validation"});
+  return res.status(400).json({ message: "Error in otp validation" });
 };
 
 
+// the customer can request for the otp Again using this controller
 export const RequestOtp = async (
   req: Request,
   res: Response,
   next: NextFunction
-) => {};
+) => {
+
+  const customer = req.body;
+  if(customer){
+    const profile = await Customer.findById(customer._id);
+    if(profile){
+      const {otp , expiry} = GenerateOtp();
+      customer.otp = otp;
+      customer.otp_expiry = expiry;
+
+      await profile.save();
+      await onRequestOtp(otp, profile.phone);
+
+      res.status(200).json({message: "OTP sent to registered phone number"});
+    }
+  }
+  return res.status(400).json({message: "Error in requesting the OTP"});
+};
 
 
-
+// fetching the customer profile
 export const CustomerProfile = async (
   req: Request,
   res: Response,
   next: NextFunction
-) => {};
+) => {
+  const customer = req.body;
+  if(customer){
+    const profile = await Customer.findById(customer._id);
+    // console.log(profile);
+    if(profile){
+    return res.status(200).json(profile);
+    }else {
+      return res.status(404).json({ message: "Customer not found" });
+    }
+  }
+  return res.status(400).json({message: "Error fetching the customer profile"});
+};
 
 
+// edit the customer profile
 export const EditCustomerProfile = async (
   req: Request,
   res: Response,
   next: NextFunction
-) => {};
+) => {
+  const customer = req.body;
+
+  const profileInputs = plainToClass(EditCustomerProfileInputs, req.body);
+  const profileErrors = await validate(profileInputs , {validationError: {target: false}});
+
+  if(profileErrors.length > 0){
+    return res.status(400).json(profileErrors);
+  }
+
+  const {firstName, lastName , address} = profileInputs;
+  if(customer){
+    const profile = await Customer.findById(customer._id)
+    if(profile){
+
+      profile.firstName = firstName;
+      profile.lastName = lastName;
+      profile.address = address;
+
+      const result = await profile.save();
+      res.status(200).json(result);
+    }
+  }
+};
